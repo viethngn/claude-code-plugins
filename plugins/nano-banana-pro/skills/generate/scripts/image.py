@@ -11,42 +11,50 @@ Generate images using Google's Gemini image models.
 
 Usage:
     uv run generate_image.py --prompt "A colorful abstract pattern" --output "./hero.png"
-    uv run generate_image.py --prompt "Minimalist icon" --output "./icon.png" --aspect landscape
+    uv run generate_image.py --prompt "Minimalist icon" --output "./icon.png" --aspect "16:9"
     uv run generate_image.py --prompt "Similar style image" --output "./new.png" --reference "./existing.png"
-    uv run generate_image.py --prompt "Blend these styles" --output "./new.png" --reference "./a.png" --reference "./b.png"
-    uv run generate_image.py --prompt "High quality art" --output "./art.png" --model pro --size 2K
+    uv run generate_image.py --prompt "High quality art" --output "./art.png" --size 2K
 """
 
-import argparse
 import os
+os.environ['PYTHONHTTPSVERIFY'] = '0'
+
+# Disable SSL verification warnings
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+import ssl
+import httpcore
+
+# Monkey patch httpcore to disable SSL verification
+_original_map_exceptions = httpcore._sync.connection.HTTPConnection._connect
+
+def patched_connect(self, request):
+    # Override to disable SSL verification
+    return _original_map_exceptions(self, request)
+
+# Disable SSL globally for httpcore
+import httpcore._backends.sync
+_original_wrap_socket = httpcore._backends.sync.SyncStream.start_tls
+
+def patched_start_tls(self, *args, **kwargs):
+    kwargs['ssl_context'] = ssl._create_unverified_context()
+    return _original_wrap_socket(self, *args, **kwargs)
+
+httpcore._backends.sync.SyncStream.start_tls = patched_start_tls
+
+import argparse
 import sys
 
 from google import genai
 from google.genai import types
 from PIL import Image
 
-MODEL_IDS = {
-    "flash": "gemini-2.5-flash-image",
-    "pro": "gemini-3-pro-image-preview",
-}
-
-
-def get_aspect_instruction(aspect: str) -> str:
-    """Return aspect ratio instruction for the prompt."""
-    aspects = {
-        "square": "Generate a square image (1:1 aspect ratio).",
-        "landscape": "Generate a landscape/wide image (16:9 aspect ratio).",
-        "portrait": "Generate a portrait/tall image (9:16 aspect ratio).",
-    }
-    return aspects.get(aspect, aspects["square"])
-
-
 def generate_image(
     prompt: str,
     output_path: str,
-    aspect: str = "square",
-    references: list[str] | None = None,
-    model: str = "flash",
+    aspect: str = "16:9",
+    reference: str | None = None,
     size: str = "1K",
 ) -> None:
     """Generate an image using Gemini and save to output_path."""
@@ -55,47 +63,46 @@ def generate_image(
         print("Error: GEMINI_API_KEY environment variable not set", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(
+        vertexai=True,
+        api_key=api_key,
+        http_options=types.HttpOptions(
+            base_url="https://api.ai.public.rakuten-it.com/google-vertexai/v1/",
+            api_version="", # Keep it empty so that SDK doesn't overwrite
+            headers={
+                "Authorization": api_key,
+            },
+        ),
+        )
 
-    aspect_instruction = get_aspect_instruction(aspect)
-    full_prompt = f"{aspect_instruction} {prompt}"
+    full_prompt = f"{prompt}"
 
-    # Build contents with optional reference images
+    # Build contents with optional reference image
     contents: list = []
-    if references:
-        for ref_path in references:
-            if not os.path.exists(ref_path):
-                print(f"Error: Reference image not found: {ref_path}", file=sys.stderr)
-                sys.exit(1)
-            contents.append(Image.open(ref_path))
-        if len(references) == 1:
-            full_prompt = f"{full_prompt} Use the provided image as a reference for style, composition, or content."
-        else:
-            full_prompt = f"{full_prompt} Use the provided {len(references)} images as references for style, composition, or content."
+    if reference:
+        if not os.path.exists(reference):
+            print(f"Error: Reference image not found: {reference}", file=sys.stderr)
+            sys.exit(1)
+        ref_image = Image.open(reference)
+        contents.append(ref_image)
+        full_prompt = f"{full_prompt} Use the provided image as a reference for style, composition, or content."
     contents.append(full_prompt)
 
-    model_id = MODEL_IDS[model]
+    model_id = "gemini-3-pro-image-preview"
 
     # Pro model supports additional config for resolution
-    if model == "pro":
-        aspect_ratios = {"square": "1:1", "landscape": "16:9", "portrait": "9:16"}
-        config = types.GenerateContentConfig(
-            response_modalities=["TEXT", "IMAGE"],
-            image_config=types.ImageConfig(
-                aspect_ratio=aspect_ratios.get(aspect, "1:1"),
-                image_size=size,
-            ),
-        )
-        response = client.models.generate_content(
-            model=model_id,
-            contents=contents,
-            config=config,
-        )
-    else:
-        response = client.models.generate_content(
-            model=model_id,
-            contents=contents,
-        )
+    config = types.GenerateContentConfig(
+        response_modalities=["TEXT", "IMAGE"],
+        image_config=types.ImageConfig(
+            aspect_ratio=aspect,
+            image_size=size,
+        ),
+    )
+    response = client.models.generate_content(
+        model=model_id,
+        contents=contents,
+        config=config,
+    )
 
     # Ensure output directory exists
     output_dir = os.path.dirname(output_path)
@@ -118,7 +125,7 @@ def generate_image(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate images using Gemini (Flash or Pro)"
+        description="Generate images using Gemini 3 Pro"
     )
     parser.add_argument(
         "--prompt",
@@ -132,31 +139,24 @@ def main():
     )
     parser.add_argument(
         "--aspect",
-        choices=["square", "landscape", "portrait"],
-        default="square",
-        help="Aspect ratio (default: square)",
+        required=True,
+        default="16:9",
+        help="Aspect ratio (default: 16:9)",
     )
     parser.add_argument(
         "--reference",
-        action="append",
-        dest="references",
-        help="Path to a reference image (can be specified multiple times for multiple references)",
-    )
-    parser.add_argument(
-        "--model",
-        choices=["flash", "pro"],
-        default="flash",
-        help="Model: flash (fast, 1024px) or pro (high-quality, up to 4K) (default: flash)",
+        help="Path to a reference image for style/composition guidance (optional)",
     )
     parser.add_argument(
         "--size",
+        required=True,
         choices=["1K", "2K", "4K"],
         default="1K",
-        help="Image resolution for pro model (default: 1K, ignored for flash)",
+        help="Image resolution (default: 1K)",
     )
 
     args = parser.parse_args()
-    generate_image(args.prompt, args.output, args.aspect, args.references, args.model, args.size)
+    generate_image(args.prompt, args.output, args.aspect, args.reference, args.size)
 
 
 if __name__ == "__main__":
