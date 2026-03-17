@@ -66,7 +66,7 @@ See the SKILL.md file for comprehensive examples of well-crafted prompts for:
 ## Running the Image Generation Script
 
 ```bash
-uv run skills/generate/scripts/image.py \
+python skills/generate/scripts/image.py \
   --prompt "Your image description" \
   --output "/path/to/output.png"
 ```
@@ -97,32 +97,32 @@ nano-banana-pro/
     └── settings.local.json   # Claude Code permission settings
 ```
 
-The plugin follows Claude Code's skill structure where `SKILL.md` defines the skill metadata (name, description, triggers) and provides usage instructions. The Python script uses Google's GenAI SDK with inline PEP 723 dependencies for zero-config execution via `uv run`.
+The plugin follows Claude Code's skill structure where `SKILL.md` defines the skill metadata (name, description, triggers) and provides usage instructions. The Python script uses Google's GenAI SDK with inline PEP 723 dependencies for zero-config execution via `python`.
 
 ## Example Usage
 
 ### Generate Architecture Diagram
 ```bash
-uv run skills/generate/scripts/image.py \
+python skills/generate/scripts/image.py \
   --prompt "Create a detailed cloud architecture diagram showing a three-tier web application deployed on AWS. Front tier: CloudFront CDN with Route53 DNS, both shown with AWS icons. Application tier: Application Load Balancer distributing to an Auto Scaling group of EC2 instances (show 4 EC2 icons in a group), running in a VPC across two availability zones (use different colored zones, light blue and light green). Data tier: RDS PostgreSQL with Multi-AZ setup (show primary and standby), ElastiCache Redis cluster (3 nodes), and S3 bucket for static assets. Draw arrows showing request flow from users through CDN to ALB to EC2 to database. Include a NAT Gateway for outbound internet access. Add security group icons around EC2 and RDS layers. Use official AWS colors but slightly muted for professionalism. Label each component clearly. Add annotations for 'Auto-scales 2-10 instances' on EC2 tier and 'Automated backups enabled' on RDS. Clean, professional style suitable for system design documentation." \
   --output "./docs/diagrams/aws-architecture.png" \
-  --size 2K \
+  --size 1K \
   --aspect 16:9
 ```
 
 ### Generate Comparison Infographic
 ```bash
-uv run skills/generate/scripts/image.py \
+python skills/generate/scripts/image.py \
   --prompt "Create a side-by-side comparison infographic contrasting SQL vs NoSQL databases for our technical documentation. Left side: SQL (Relational) with a table icon in blue. Show characteristics as a vertical list: Fixed schema (with table structure illustration), ACID transactions (checkmark), Vertical scaling (upward arrow), Complex queries with JOINs (SQL snippet icon), Best for: Financial systems, Examples: PostgreSQL, MySQL. Right side: NoSQL (Document) with a document/JSON icon in orange. Show characteristics: Flexible schema (with JSON structure illustration), Eventual consistency (circular arrows), Horizontal scaling (multiple server icons), Simple queries (key-value icon), Best for: Real-time apps, Examples: MongoDB, DynamoDB. Use color-coded headers (blue vs orange). In the middle, add a gray vertical divider with decision criteria: 'Use SQL if: Complex relationships, ACID required, Structured data' and 'Use NoSQL if: Rapid iteration, Massive scale, Flexible data'. Modern, clean design with icons and good typography. Title at top: 'Database Selection Guide'. Suitable for architecture decision documentation, 16:9 aspect ratio." \
   --output "./docs/infographics/database-comparison.png" \
-  --size 2K
+  --size 1K
 ```
 
 ### Generate Process Flow
 ```bash
-uv run skills/generate/scripts/image.py \
+python skills/generate/scripts/image.py \
   --prompt "Create a vertical flowchart showing the OAuth 2.0 authorization code flow with PKCE for mobile apps. Start with 'User opens mobile app' at top. Next: 'App generates code_verifier and code_challenge'. Then: 'Redirect to authorization server with code_challenge'. User sees: 'Login screen' (show smartphone icon). After login: 'Authorization server validates credentials'. Decision diamond: 'User approves?' with No path going to 'Access denied (error screen)' and Yes path continuing to 'Generate authorization code'. Next: 'Redirect back to app with code'. App then: 'Exchange code + code_verifier for tokens'. Server: 'Validate code_verifier matches code_challenge'. Final step: 'Return access_token and refresh_token'. End with 'User authenticated in app'. Use rounded rectangles for process steps, diamonds for decisions, parallelograms for user interactions. Color code: blue for app steps, green for server steps, orange for user interactions. Add small icons (lock for security steps, key for tokens). Include annotations explaining PKCE adds security for mobile. Professional style for API security documentation." \
   --output "./docs/diagrams/oauth-pkce-flow.png" \
-  --size 2K \
+  --size 1K \
   --aspect 9:16
 ```
