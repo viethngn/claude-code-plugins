@@ -60,10 +60,10 @@ Set the `GEMINI_API_KEY` environment variable with your Google AI API key.
 
 ### Step 1: Generate the Image
 
-Use `scripts/image.py` with uv. The script is located in the skill directory at `skills/generate/scripts/image.py`:
+Use `scripts/image.py` with python. The script is located in the skill directory at `skills/generate/scripts/image.py`:
 
 ```bash
-uv run "${SKILL_DIR}/scripts/image.py" \
+python "${SKILL_DIR}/scripts/image.py" \
   --prompt "Your image description" \
   --output "/path/to/output.png"
 ```
@@ -79,7 +79,7 @@ Options:
 
 ### Example Usage
 ```bash
-uv run "${SKILL_DIR}/scripts/image.py" \
+python "${SKILL_DIR}/scripts/image.py" \
   --prompt "Create a detailed system architecture diagram showing a three-tier microservices platform. Front layer: Load balancer distributing traffic to API gateway cluster. Middle layer: Five microservices (Auth, Users, Orders, Payments, Notifications) each in separate containers with health check endpoints. Data layer: PostgreSQL primary with read replicas, Redis cache cluster, and S3 for object storage. Show request flow arrows in blue, database connections in green, cache lookups in orange. Include monitoring stack (Prometheus, Grafana) on the side. Use professional colors, clear labels on all components, and add a legend. Suitable for technical documentation explaining our platform architecture." \
   --output "/path/to/architecture-diagram.png" \
   --size 2K
@@ -90,7 +90,7 @@ uv run "${SKILL_DIR}/scripts/image.py" \
 To generate an image based on an existing reference (useful for maintaining consistent visual style across documentation):
 
 ```bash
-uv run "${SKILL_DIR}/scripts/image.py" \
+python "${SKILL_DIR}/scripts/image.py" \
   --prompt "Create a system integration diagram showing how our payment service connects to Stripe API, using the same visual style, color scheme, and layout conventions as the reference diagram. Show the payment flow from user checkout through our service to Stripe, including webhook callbacks for payment confirmations. Include error handling paths and retry logic. Use the same icon style and arrow conventions from the reference." \
   --output "/path/to/payment-integration-diagram.png" \
   --reference "/path/to/existing-architecture-diagram.png"
