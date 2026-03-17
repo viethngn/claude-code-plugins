@@ -10,10 +10,10 @@
 Generate images using Google's Gemini image models.
 
 Usage:
-    uv run generate_image.py --prompt "A colorful abstract pattern" --output "./hero.png"
-    uv run generate_image.py --prompt "Minimalist icon" --output "./icon.png" --aspect "16:9"
-    uv run generate_image.py --prompt "Similar style image" --output "./new.png" --reference "./existing.png"
-    uv run generate_image.py --prompt "High quality art" --output "./art.png" --size 2K
+    python generate_image.py --prompt "A colorful abstract pattern" --output "./hero.png"
+    python generate_image.py --prompt "Minimalist icon" --output "./icon.png" --aspect "16:9"
+    python generate_image.py --prompt "Similar style image" --output "./new.png" --reference "./existing.png"
+    python generate_image.py --prompt "High quality art" --output "./art.png" --size 1K
 """
 
 import os
